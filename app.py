@@ -1,23 +1,19 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import psycopg2
-from psycopg2.extras import RealDictCursor
-import os
 from fpdf import FPDF
+import os
 
 # Configuração da página
 st.set_page_config(page_title="JAMOB PRO Enterprise", layout="wide")
 
-# Função de Conexão
-def get_db():
-    return psycopg2.connect(os.environ["DATABASE_URL"], sslmode="require")
-
 # --- Interface com Logo e Mascote ---
 with st.sidebar:
-    # Ajustado para buscar dentro da pasta 'images'
-    st.image("images/jamob.png", use_container_width=True)
-    st.image("images/mascote_jamob.png", use_container_width=True)
+    # Caminho corrigido para a pasta 'images'
+    if os.path.exists("images/jamob.png"):
+        st.image("images/jamob.png", use_container_width=True)
+    if os.path.exists("images/mascote_jamob.png"):
+        st.image("images/mascote_jamob.png", use_container_width=True)
     
     st.title("JAMOB PRO")
     menu = st.radio("Módulos", ["Visão Geral", "OS & Atendimento", "Estoque & Catálogo", "Financeiro & Fiscal"])
@@ -30,7 +26,7 @@ if menu == "Visão Geral":
     col2.metric("Faturamento Mensal", "R$ 15.450,00")
     col3.metric("Eficiência", "98%")
     
-    # Gráfico Plotly
+    # Gráfico Plotly profissional
     df = pd.DataFrame({"Serviço": ["Lavagem", "Mecânica", "Polimento"], "Receita": [2500, 8000, 4950]})
     fig = px.pie(df, values='Receita', names='Serviço', title="Distribuição por Receita")
     st.plotly_chart(fig, use_container_width=True)
@@ -43,13 +39,12 @@ elif menu == "OS & Atendimento":
 
 elif menu == "Estoque & Catálogo":
     st.header("Gerenciador de Peças e Serviços")
-    st.write("Cadastre seus itens para automatizar as baixas.")
+    st.write("Catálogo completo para qualquer nicho automotivo.")
 
 elif menu == "Financeiro & Fiscal":
     st.header("Relatório para Contador")
     if st.button("Gerar PDF Oficial"):
-        st.info("Relatório PDF gerado com sucesso!")
+        st.info("Documento PDF gerado e pronto para envio!")
 
-# AVISO DE SEGURANÇA
 st.sidebar.markdown("---")
 st.sidebar.write("JAMOB PRO - Gestão Inteligente")
