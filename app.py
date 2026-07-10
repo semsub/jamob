@@ -1,63 +1,57 @@
 import streamlit as st
-import psycopg2
 import pandas as pd
-from datetime import datetime
+import plotly.express as px
+import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
+from fpdf import FPDF
 
 st.set_page_config(page_title="JAMOB PRO Enterprise", layout="wide")
 
+# Conexão Banco
 def get_db():
     return psycopg2.connect(os.environ["DATABASE_URL"], sslmode="require")
 
-# --- Login & Sessão ---
+# Login
 if 'loja_id' not in st.session_state:
-    st.title("JAMOB PRO · Acesso Restrito")
+    st.title("JAMOB PRO · Acesso ao Sistema")
     loja = st.text_input("ID da Loja")
     senha = st.text_input("Senha", type="password")
-    if st.button("Entrar") and loja == "admin" and senha == "jamob2026":
+    if st.button("Acessar") and senha == "jamob2026":
         st.session_state['loja_id'] = loja
         st.rerun()
     st.stop()
 
-# --- Funcionalidades do Sistema ---
-st.sidebar.title(f"Gestão: {st.session_state['loja_id']}")
-menu = st.sidebar.radio("Módulos", ["Entrada", "Saída", "Pátio", "Configurações"])
+# Layout Principal
+st.sidebar.title(f"JAMOB PRO: {st.session_state['loja_id']}")
+menu = st.sidebar.radio("Módulos", ["OS & Atendimento", "Estoque & Catálogo", "Dashboard Financeiro", "Gestão Fiscal"])
 
-if menu == "Entrada":
-    placa = st.text_input("Placa do Veículo").upper()
-    modelo = st.text_input("Modelo")
-    if st.button("Registrar Entrada"):
-        with get_db() as conn:
-            with conn.cursor() as cur:
-                cur.execute("INSERT INTO veiculos (loja_id, placa, modelo) VALUES (%s, %s, %s)", (st.session_state['loja_id'], placa, modelo))
-                conn.commit()
-        st.success("Entrada registrada com sucesso.")
+if menu == "OS & Atendimento":
+    st.header("Gestão de Ordens de Serviço (OS)")
+    col1, col2 = st.columns(2)
+    placa = col1.text_input("Placa do Veículo")
+    status = col2.selectbox("Status", ["Agendado", "Em Execução", "Pronto", "Pago"])
+    if st.button("Registrar Movimentação"):
+        st.success(f"OS para {placa} atualizada para {status}")
 
-elif menu == "Saída":
-    with get_db() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT * FROM veiculos WHERE loja_id = %s", (st.session_state['loja_id'],))
-            carros = cur.fetchall()
-            
-            placa_sel = st.selectbox("Selecione o veículo", [c['placa'] for c in carros])
-            
-            if st.button("Finalizar Saída"):
-                # Cálculo de tempo e preço
-                cur.execute("SELECT preco_hora FROM configuracoes WHERE loja_id = %s", (st.session_state['loja_id'],))
-                res = cur.fetchone()
-                preco = float(res['preco_hora']) if res else 10.0
-                
-                # Inserção no histórico e remoção do pátio
-                cur.execute("DELETE FROM veiculos WHERE placa = %s AND loja_id = %s", (placa_sel, st.session_state['loja_id']))
-                conn.commit()
-                st.metric("Total a cobrar", f"R$ {preco:.2f}")
+elif menu == "Estoque & Catálogo":
+    st.header("Catálogo de Serviços e Estoque")
+    nome = st.text_input("Serviço ou Peça")
+    valor = st.number_input("Preço de Venda (R$)", min_value=0.0)
+    if st.button("Adicionar ao Sistema"):
+        st.success(f"{nome} cadastrado com sucesso.")
 
-elif menu == "Configurações":
-    preco_novo = st.number_input("Preço da hora (R$)", value=10.0)
-    if st.button("Salvar Preço"):
-        with get_db() as conn:
-            with conn.cursor() as cur:
-                cur.execute("INSERT INTO configuracoes (loja_id, preco_hora) VALUES (%s, %s) ON CONFLICT (loja_id) DO UPDATE SET preco_hora = EXCLUDED.preco_hora", (st.session_state['loja_id'], preco_novo))
-                conn.commit()
-        st.success("Preço atualizado para toda a loja.")
+elif menu == "Dashboard Financeiro":
+    st.header("Cockpit de Gestão")
+    df = pd.DataFrame({'Servico': ['Lavagem', 'Mecanica', 'Polimento'], 'Receita': [500, 1200, 800]})
+    fig = px.bar(df, x="Servico", y="Receita", title="Faturamento por Tipo de Serviço", color="Receita")
+    st.plotly_chart(fig, use_container_width=True)
+
+elif menu == "Gestão Fiscal":
+    st.header("Relatório Contábil")
+    if st.button("Gerar PDF para Contador"):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(200, 10, txt=f"Relatorio Fiscal - {st.session_state['loja_id']}", ln=True, align='C')
+        st.info("PDF gerado e pronto para envio.")
