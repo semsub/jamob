@@ -15,9 +15,10 @@ def get_db():
 
 # --- Interface com Logo e Mascote ---
 with st.sidebar:
-    # AQUI ESTÁ A INTEGRAÇÃO DAS IMAGENS
-    st.image("jamob.png", use_column_width=True)
-    st.image("mascote_jamob.png", use_column_width=True)
+    # Ajustado para buscar dentro da pasta 'images'
+    st.image("images/jamob.png", use_container_width=True)
+    st.image("images/mascote_jamob.png", use_container_width=True)
+    
     st.title("JAMOB PRO")
     menu = st.radio("Módulos", ["Visão Geral", "OS & Atendimento", "Estoque & Catálogo", "Financeiro & Fiscal"])
 
